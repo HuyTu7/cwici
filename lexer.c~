@@ -1,0 +1,168 @@
+/*
+ * lexer.c file for lexer component
+ */
+#include <stdio.h>
+#include "lexer.h"
+
+#ifndef LEXER_C
+#define LEXER_C
+
+int tok;
+int current; 
+int state;
+char lexeme[250];
+FILE * file;
+int state7Flag = 0;
+
+void initLexer(char *fileName)
+{
+    current = 0;
+    state = 0; 
+    lexeme[current] = '\0'; 
+    file = fopen(fileName, "r");    
+}
+
+int getToken()
+{
+    if(state7Flag)
+    {
+        state7Flag = 0;
+        return EOL_TOK;
+    }
+
+    while(1)
+    {
+        char chr = fgetc(file);
+        switch(state)
+        {
+            case 0:
+                if( chr == '%')
+                {
+                    state = 5;
+                    return EOL_TOK;
+                }
+                else if((chr == ' ') || (chr == '\t'))
+                {
+                    state = 2;
+                }
+                else if('0' <= chr && chr <= '9')
+                {
+                    state = 3;
+                    tok = NUM_TOK;
+                    lexeme[current] = chr;
+                    current++;
+                }
+                else if(('a' <= chr && chr <= 'z') 
+                        || ('A' <= chr && chr <= 'Z'))
+                {
+                    state = 4;
+                    tok = WORD_TOK;
+                    lexeme[current]= chr;
+                    current++;
+                }
+                else
+                {
+                    state = 8;
+                }
+                break;
+            case 1:
+                if ( chr == '\n')
+                {
+                    state = 5;
+                    return EOL_TOK;
+                }
+                else
+                {
+                    state = 1;
+                }
+                break;
+            case 2:
+                if('0' <= chr && chr <= '9')
+                {
+                    state = 3;
+                    tok = NUM_TOK;
+                    lexeme[current] = chr;
+                    current++;
+                }
+                else if(('a' <= chr && chr <= 'z') 
+                        || ('A' <= chr && chr <= 'Z'))
+                {
+                    state = 4;
+                    tok = WORD_TOK;
+                    lexeme[current] = chr;
+                    current++;
+                }
+                else if(chr == '\n')
+                {
+                    state = 5;
+                    return EOL_TOK;
+                }
+                else if((chr == ' ') || (chr == '\t'))
+                {
+                    state = 2;
+                }
+                else
+                {
+                    state = 8;
+                }
+                break;
+            case 3:
+                if (chr == '\n')
+                {
+                    state = 7;
+                    state7Flag = 1;
+                }
+                else if((chr == ' ') || (chr == '\t'))
+                {
+                    state = 6;
+                    return tok;
+                }
+                else
+                {
+                    state = 8;
+                }
+                break;
+             case 4:
+                if (chr == '\n')
+                {
+                    state = 7;
+                    state7Flag = 1;
+                }
+                else if((chr == ' ') || (chr == '\t'))
+                {
+                    state = 6;
+                    return tok;
+                }      
+                else if(('a' <= chr && chr <= 'z') 
+                        || ('A' <= chr && chr <= 'Z')
+                        || ('0' <= chr && chr <= '9'))
+                {
+                    state = 4;
+                    lexeme[current] = chr;
+                    current++;
+                }
+                break;
+            case 5:
+                return EOL_TOK;
+                break;
+            case 6:
+                return tok;
+                break;
+            case 7:
+                return tok;
+                break;
+            case 8:
+                printf("Error");
+                break;
+        }
+    }
+}
+
+
+char * getLexeme()
+{
+    return lexeme; 
+}
+int getLineNumber(); // optionally can provide helpful error messages
+
+#endif
